@@ -21,6 +21,7 @@ public:
 	ZZ* sx = new ZZ[N];
 
 	SecretKey(Ring& ring);
+	virtual ~SecretKey();
 
 };
 

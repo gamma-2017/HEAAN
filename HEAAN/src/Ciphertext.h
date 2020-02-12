@@ -26,8 +26,13 @@ public:
 	long logq;
 
 	long n;
+    
+#ifdef CIPHERTEXT_EXTENDED
+    double nu; // (public) bound on plaintext, ie. |m| < nu.
+    double B; //  noise bound, ie.  |ax*sx+bx-m| < B with high probability.
+#endif
 
-	Ciphertext(long logp = 0, long logq = 0, long n = 0);
+	Ciphertext( long logp = 0, long logq = 0, long n = 0, double nu = FP_NAN, double B = FP_NAN );
 
 	Ciphertext(const Ciphertext& o);
 
@@ -40,5 +45,29 @@ public:
 	virtual ~Ciphertext();
 	
 };
+
+/* Format ciphertext and send it to some stream. ^ostringstream to put stuff in a string
+ * 
+ * Ciphertext<\n
+ *   logq=%d, logp=%d, n=%d|N=%d,\n
+ *   |plaintext|<%.2f, error<%.2f\n
+ * >\n
+ * a=%dd*X^%d+...+%dd,\n
+ * b=%dd*X^%d+...+%dd.
+ * 
+ * As the output would be tremendously long, for the time being, we only print the leading and the constant coefficient.
+ */
+ostream& operator<<(ostream& s, const Ciphertext& o);
+/*
+ * Format ciphertext and print plaintext.
+ * Second version compares two ciphertexts, third a ciphertext with a plaintext.
+ */
+class Plaintext;
+class SecretKey;
+class Scheme;
+ostream& operator<< ( ostream& s, const std::tuple<Ciphertext*,SecretKey*,Scheme*> o );
+ostream& operator<< ( ostream& s, const std::tuple<Ciphertext*,Ciphertext*,SecretKey*,Scheme*> o );
+ostream& operator<< ( ostream& s, const std::tuple<Ciphertext*,Ciphertext*,SecretKey*,Scheme*> o );
+//ostream& operator<< ( ostream& s, const std::tuple<Ciphertext*,Plaintext*,SecretKey*,Scheme*> o );
 
 #endif

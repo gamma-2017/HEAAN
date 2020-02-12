@@ -18,6 +18,8 @@
 using namespace std;
 using namespace NTL;
 
+//long RRsetprecisionnow(long p);
+//static long RRprecdummy = RRsetprecisionnow(500); // default: 150 bits precision
 static RR Pi = ComputePi_RR();
 
 class Ring {
@@ -31,7 +33,8 @@ public:
 	RingMultiplier multiplier;
 
 	Ring();
-
+    
+	virtual ~Ring();
 
 	//----------------------------------------------------------------------------------
 	//   Encode & Decode

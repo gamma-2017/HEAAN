@@ -11,6 +11,8 @@
 #include <NTL/RR.h>
 #include <NTL/ZZ.h>
 #include <complex>
+#include <float.h> // provides eg. INFINITY, DBL_EPSILON
+//#define INFINITY 1/0
 
 #include "BootContext.h"
 #include "SecretKey.h"
@@ -71,15 +73,19 @@ public:
 	//----------------------------------------------------------------------------------
 
 
-	void encode(Plaintext& plain, complex<double>* vals, long n, long logp, long logq);
+    void encode(Plaintext& plain, complex<double>* vals, long n, long logp, long logq,
+                    double nu = INFINITY);
 
-	void encode(Plaintext& plain, double* vals, long n, long logp, long logq);
+	void encode(Plaintext& plain, double* vals, long n, long logp, long logq,
+                    double nu = INFINITY);
 
 	complex<double>* decode(Plaintext& plain);
 
-	void encodeSingle(Plaintext& plain, complex<double> val, long logp, long logq);
+	void encodeSingle(Plaintext& plain, complex<double> val, long logp, long logq,
+                    double nu = INFINITY);
 
-	void encodeSingle(Plaintext& plain, double val, long logp, long logq);
+	void encodeSingle(Plaintext& plain, double val, long logp, long logq,
+                    double nu = INFINITY);
 
 	complex<double> decodeSingle(Plaintext& plain);
 
@@ -93,17 +99,17 @@ public:
 
 	void decryptMsg(Plaintext& plain, SecretKey& secretKey, Ciphertext& cipher);
 
-	void encrypt(Ciphertext& cipher, complex<double>* vals, long n, long logp, long logq);
+	void encrypt(Ciphertext& cipher, complex<double>* vals, long n, long logp, long logq, double nu = INFINITY );
 
-	void encrypt(Ciphertext& cipher, double* vals, long n, long logp, long logq);
+	void encrypt(Ciphertext& cipher, double* vals, long n, long logp, long logq, double nu = INFINITY );
 
-	void encryptZeros(Ciphertext& cipher, long n, long logp, long logq);
+	void encryptZeros(Ciphertext& cipher, long n, long logp, long logq, double nu = 0 );
 
 	complex<double>* decrypt(SecretKey& secretKey, Ciphertext& cipher);
 
-	void encryptSingle(Ciphertext& cipher, complex<double> val, long logp, long logq);
+	void encryptSingle(Ciphertext& cipher, complex<double> val, long logp, long logq, double nu = INFINITY );
 
-	void encryptSingle(Ciphertext& cipher, double val, long logp, long logq);
+	void encryptSingle(Ciphertext& cipher, double val, long logp, long logq, double nu = INFINITY );
 
 	complex<double> decryptSingle(SecretKey& secretKey, Ciphertext& cipher);
 
@@ -120,17 +126,17 @@ public:
 
 	void addAndEqual(Ciphertext& cipher1, Ciphertext& cipher2);
 
-	void addConst(Ciphertext& res, Ciphertext& cipher, double cnst, long logp);
+	void addConst(Ciphertext& res, Ciphertext& cipher, double cnst, long logp = -1);
 
-	void addConst(Ciphertext& res, Ciphertext& cipher, RR& cnst, long logp);
+	void addConst(Ciphertext& res, Ciphertext& cipher, RR& cnst, long logp = -1);
 
-	void addConst(Ciphertext& res, Ciphertext& cipher, complex<double> cnst, long logp);
+	void addConst(Ciphertext& res, Ciphertext& cipher, complex<double> cnst, long logp = -1);
 
-	void addConstAndEqual(Ciphertext& cipher, double cnst, long logp);
+	void addConstAndEqual(Ciphertext& cipher, double cnst, long logp = -1);
 
-	void addConstAndEqual(Ciphertext& cipher, RR& cnst, long logp);
+	void addConstAndEqual(Ciphertext& cipher, const RR& cnst, long logp = -1);
 
-	void addConstAndEqual(Ciphertext& cipher, complex<double> cnst, long logp);
+	void addConstAndEqual(Ciphertext& cipher, complex<double> cnst, long logp = -1);
 
 	void sub(Ciphertext& res, Ciphertext& cipher1, Ciphertext& cipher2);
 
@@ -154,27 +160,31 @@ public:
 
 	void squareAndEqual(Ciphertext& cipher);
 
-	void multByConst(Ciphertext& res, Ciphertext& cipher, double cnst, long logp);
+	void multByConst(Ciphertext& res, Ciphertext& cipher, double cnst, long logp );
 
-	void multByConst(Ciphertext& res, Ciphertext& cipher, complex<double> cnst, long logp);
+	void multByConst(Ciphertext& res, Ciphertext& cipher, complex<double> cnst, long logp );
 
-	void multByConstVec(Ciphertext& res, Ciphertext& cipher, complex<double>* cnstVec, long logp);
+	void multByConstVec(Ciphertext& res, Ciphertext& cipher, complex<double>* cnstVec, long logp );
 
-	void multByConstVecAndEqual(Ciphertext& cipher, complex<double>* cnstVec, long logp);
+	void multByConstVecAndEqual(Ciphertext& cipher, complex<double>* cnstVec, long logp );
 
-	void multByConstAndEqual(Ciphertext& cipher, double cnst, long logp);
+	void multByConstAndEqual(Ciphertext& cipher, double cnst, long logp );
 
-	void multByConstAndEqual(Ciphertext& cipher, RR& cnst, long logp);
+	void multByConstAndEqual(Ciphertext& cipher, RR& cnst, long logp );
 
-	void multByConstAndEqual(Ciphertext& cipher, complex<double> cnst, long logp);
+	void multByConstAndEqual(Ciphertext& cipher, complex<double> cnst, long logp );
 
-	void multByPoly(Ciphertext& res, Ciphertext& cipher, ZZ* poly, long logp);
+	void multByPoly(Ciphertext& res, Ciphertext& cipher, ZZ* poly, long logp,
+                    double nu = INFINITY );
 
-	void multByPolyNTT(Ciphertext& res, Ciphertext& cipher, uint64_t* rpoly, long bnd, long logp);
+	void multByPolyNTT(Ciphertext& res, Ciphertext& cipher, uint64_t* rpoly, long bnd, long logp,
+                    double nu = INFINITY );
 
-	void multByPolyAndEqual(Ciphertext& cipher, ZZ* poly, long logp);
+	void multByPolyAndEqual(Ciphertext& cipher, ZZ* poly, long logp,
+                    double nu = INFINITY );
 
-	void multByPolyNTTAndEqual(Ciphertext& cipher, uint64_t* rpoly, long bnd, long logp);
+	void multByPolyNTTAndEqual(Ciphertext& cipher, uint64_t* rpoly, long bnd, long logp,
+                    double nu = INFINITY );
 
 	void multByMonomial(Ciphertext& res, Ciphertext& cipher, const long degree);
 
