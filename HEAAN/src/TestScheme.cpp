@@ -10,6 +10,7 @@
 #include <NTL/BasicThreadPool.h>
 #include <NTL/ZZ.h>
 
+#include "Plaintext.h"
 #include "Ciphertext.h"
 #include "EvaluatorUtils.h"
 #include "Ring.h"
@@ -43,7 +44,7 @@ void TestScheme::testEncrypt(long logq, long logp, long logn) {
 	Ciphertext cipher;
 
 	timeutils.start("Encrypt");
-	scheme.encrypt(cipher, mvec, n, logp, logq);
+	scheme.encrypt(cipher, mvec, n, logp, logq, 1.5);
 	timeutils.stop("Encrypt");
 
 	timeutils.start("Decrypt");
@@ -51,7 +52,9 @@ void TestScheme::testEncrypt(long logq, long logp, long logn) {
 	timeutils.stop("Decrypt");
 
 	StringUtils::compare(mvec, dvec, n, "val");
-
+    
+	cout << cipher << endl;
+    
 	cout << "!!! END TEST ENCRYPT !!!" << endl;
 }
 
@@ -98,8 +101,11 @@ void TestScheme::testAdd(long logq, long logp, long logn) {
 	}
 
 	Ciphertext cipher1, cipher2;
-	scheme.encrypt(cipher1, mvec1, n, logp, logq);
-	scheme.encrypt(cipher2, mvec2, n, logp, logq);
+	scheme.encrypt(cipher1, mvec1, n, logp, logq, 1.5);
+	scheme.encrypt(cipher2, mvec2, n, logp, logq, 1.5);
+
+	cout << cipher1 << endl;
+	cout << cipher2 << endl;
 
 	timeutils.start("Addition");
 	scheme.addAndEqual(cipher1, cipher2);
@@ -108,6 +114,8 @@ void TestScheme::testAdd(long logq, long logp, long logn) {
 	complex<double>* dadd = scheme.decrypt(secretKey, cipher1);
 
 	StringUtils::compare(madd, dadd, n, "add");
+
+	cout << cipher1 << endl;
 
 	cout << "!!! END TEST ADD !!!" << endl;
 }

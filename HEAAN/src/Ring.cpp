@@ -40,9 +40,41 @@ Ring::Ring() {
 		double angle = 2.0 * M_PI * j / M;
 		ksiPows[j].real(cos(angle));
 		ksiPows[j].imag(sin(angle));
+        // MN2020/01/28: could also be ksiPows[j] = exp( Iangle ) with complex<double> Iangle(0,angle)
+        // for speedup one might use ksiPows[N+j] = -ksiPows[j]
 	}
 	ksiPows[M] = ksiPows[0];
 
+}
+
+Ring::~Ring()
+{
+    for ( auto const& it : bootContextMap )
+    {
+        long logSlots = it.first;
+        long slots = 1 << logSlots;
+        auto bootcontext = it.second;
+//cout << "deleting bootContext[" << logSlots << "]" << endl; // MN:DEBUGGING
+        for ( long i=0; i<slots; i++ ) {
+            if ( bootcontext->rpvecInv[i] ) delete[] bootcontext->rpvecInv[i];
+            if ( bootcontext->rpvec[i] ) delete[] bootcontext->rpvec[i];
+        }
+        delete[] bootcontext->rpvecInv;
+        delete[] bootcontext->rpvec;
+        if ( logSlots<logNh ) {
+            if ( bootcontext->rp2 ) delete[] bootcontext->rp2;
+            if ( bootcontext->rp1 ) delete[] bootcontext->rp1;
+        }
+        delete[] bootcontext->bndvecInv;
+        delete[] bootcontext->bndvec;
+        //bootcontext->bnd1;
+        //bootcontext->bnd2;
+        //bootcontext->logp;
+        delete bootcontext;
+    }
+    delete[] ksiPows;
+    delete[] rotGroup;
+    delete[] qpows;
 }
 
 void Ring::arrayBitReverse(complex<double>* vals, long n) {
@@ -150,6 +182,9 @@ void Ring::decode(ZZ* mx, complex<double>* vals, long slots, long logp, long log
 	EMB(vals, slots);
 }
 
+#define DEBUGpvalsA { double mx=-INFINITY; for (auto i=0; i<dslots; i++) { if (mx < abs(pvals[i])) mx=abs(pvals[i]); cout << "[" << i << "]=" << pvals[i] << abs(pvals[i]) << ","; } cout << mx << "." << endl; }
+#define DEBUGpvalsB { int i; double mx=-INFINITY; for (i=0; i<min(2,dslots); i++) { if (mx < abs(pvals[i])) mx=abs(pvals[i]); cout << "[" << i << "]=" << pvals[i] << abs(pvals[i]) << ","; } for (; i<dslots; i++) { if (mx < abs(pvals[i])) mx=abs(pvals[i]); } cout << ".... max=" << mx << "." << endl; }
+//#define DEBUGpvals DEBUGpvalsB
 void Ring::addBootContext(long logSlots, long logp) {
 	if (bootContextMap.find(logSlots) == bootContextMap.end()) {
 		long slots = 1 << logSlots;
@@ -181,6 +216,9 @@ void Ring::addBootContext(long logSlots, long logp) {
 			long dgap = gap >> 1;
 			for (ki = 0; ki < slots; ki += k) {
 				for (pos = ki; pos < ki + k; ++pos) {
+#ifdef DEBUGpvals
+                    cout << "BootKey[" << ki << "," << pos << "]" << endl; // MN:DEBUGGING
+#endif
 					for (i = 0; i < slots - pos; ++i) {
 						deg = ((M - rotGroup[i + pos]) * i * gap) % M;
 						pvals[i] = ksiPows[deg];
@@ -193,8 +231,17 @@ void Ring::addBootContext(long logSlots, long logp) {
 						pvals[i + slots].real(-pvals[i].imag());
 						pvals[i + slots].imag(pvals[i].real());
 					}
+#ifdef DEBUGpvals
+			DEBUGpvals; // MN:DEBUGGING
+#endif
 					EvaluatorUtils::rightRotateAndEqual(pvals, dslots, ki);
+#ifdef DEBUGpvals
+			DEBUGpvals; // MN:DEBUGGING
+#endif
 					EMBInv(pvals, dslots);
+#ifdef DEBUGpvals
+			DEBUGpvals; // MN:DEBUGGING
+#endif
 					for (i = 0, jdx = Nh, idx = 0; i < dslots; ++i, jdx += dgap, idx += dgap) {
 						pvec[idx] = EvaluatorUtils::scaleUpToZZ(pvals[i].real(), logp);
 						pvec[jdx] = EvaluatorUtils::scaleUpToZZ(pvals[i].imag(), logp);
@@ -204,17 +251,26 @@ void Ring::addBootContext(long logSlots, long logp) {
 					rpvec[pos] = new uint64_t[np << logN];
 					CRT(rpvec[pos], pvec, np);
 					for (i = 0; i < N; ++i) {
-						pvec[i] = ZZ::zero();
+						pvec[i].kill(); // pvec[i] = ZZ::zero(); // MN2020/02/05: No leak, but kill is a little faster.
 					}
 				}
 			}
 
+#ifdef DEBUGpvals
+       cout << "BootKey.p1[" << -c << "i]" << endl; // MN:DEBUGGING
+#endif
 			for (i = 0; i < slots; ++i) {
 				pvals[i] = 0.0;
 				pvals[i + slots].real(0);
 				pvals[i + slots].imag(-c);
 			}
+#ifdef DEBUGpvals
+		DEBUGpvals; // MN:DEBUGGING
+#endif
 			EMBInv(pvals, dslots);
+#ifdef DEBUGpvals
+		DEBUGpvals; // MN:DEBUGGING
+#endif
 			for (i = 0, jdx = Nh, idx = 0; i < dslots; ++i, jdx += dgap, idx += dgap) {
 				pvec[idx] = EvaluatorUtils::scaleUpToZZ(pvals[i].real(), logp);
 				pvec[jdx] = EvaluatorUtils::scaleUpToZZ(pvals[i].imag(), logp);
@@ -224,15 +280,23 @@ void Ring::addBootContext(long logSlots, long logp) {
 			rp1 = new uint64_t[np << logN];
 			CRT(rp1, pvec, np);
 			for (i = 0; i < N; ++i) {
-				pvec[i] = ZZ::zero();
+				pvec[i].kill(); // pvec[i] = ZZ::zero(); // MN2020/02/05: No leak, but kill is a little faster.
 			}
 
+#ifdef DEBUGpvals
+       cout << "BootKey.p2[" << c << "]" << endl; // MN:DEBUGGING
+#endif
 			for (i = 0; i < slots; ++i) {
 				pvals[i] = c;
 				pvals[i + slots] = 0;
 			}
-
+#ifdef DEBUGpvals
+		DEBUGpvals; // MN:DEBUGGING
+#endif
 			EMBInv(pvals, dslots);
+#ifdef DEBUGpvals
+		DEBUGpvals; // MN:DEBUGGING
+#endif
 			for (i = 0, jdx = Nh, idx = 0; i < dslots; ++i, jdx += dgap, idx += dgap) {
 				pvec[idx] = EvaluatorUtils::scaleUpToZZ(pvals[i].real(), logp);
 				pvec[jdx] = EvaluatorUtils::scaleUpToZZ(pvals[i].imag(), logp);
@@ -242,12 +306,16 @@ void Ring::addBootContext(long logSlots, long logp) {
 			rp2 = new uint64_t[np << logN];
 			CRT(rp2, pvec, np);
 			for (i = 0; i < N; ++i) {
-				pvec[i] = ZZ::zero();
+				pvec[i].kill(); // pvec[i] = ZZ::zero(); // MN2020/02/05: No leak, but kill is a little faster.
 			}
 
-		} else {
+		}
+		else {
 			for (ki = 0; ki < slots; ki += k) {
 				for (pos = ki; pos < ki + k; ++pos) {
+#ifdef DEBUGpvals
+                    cout << "BootKey[" << ki << "," << pos << "]" << endl; // MN:DEBUGGING
+#endif
 					for (i = 0; i < slots - pos; ++i) {
 						deg = ((M - rotGroup[i + pos]) * i * gap) % M;
 						pvals[i] = ksiPows[deg];
@@ -256,8 +324,17 @@ void Ring::addBootContext(long logSlots, long logp) {
 						deg = ((M - rotGroup[i + pos - slots]) * i * gap) % M;
 						pvals[i] = ksiPows[deg];
 					}
+#ifdef DEBUGpvals
+			DEBUGpvals; // MN:DEBUGGING
+#endif
 					EvaluatorUtils::rightRotateAndEqual(pvals, slots, ki);
+#ifdef DEBUGpvals
+			DEBUGpvals; // MN:DEBUGGING
+#endif
 					EMBInv(pvals, slots);
+#ifdef DEBUGpvals
+			DEBUGpvals; // MN:DEBUGGING
+#endif
 					for (i = 0, jdx = Nh, idx = 0; i < slots; ++i, jdx += gap, idx += gap) {
 						pvec[idx] = EvaluatorUtils::scaleUpToZZ(pvals[i].real(), logp);
 						pvec[jdx] = EvaluatorUtils::scaleUpToZZ(pvals[i].imag(), logp);
@@ -267,7 +344,7 @@ void Ring::addBootContext(long logSlots, long logp) {
 					rpvec[pos] = new uint64_t[np << logN];
 					CRT(rpvec[pos], pvec, np);
 					for (i = 0; i < N; ++i) {
-						pvec[i] = ZZ::zero();
+						pvec[i].kill(); // pvec[i] = ZZ::zero(); // MN2020/02/05: No leak, but kill is a little faster.
 					}
 				}
 			}
@@ -276,6 +353,9 @@ void Ring::addBootContext(long logSlots, long logp) {
 		for (ki = 0; ki < slots; ki += k) {
 			for (pos = ki; pos < ki + k; ++pos) {
 
+#ifdef DEBUGpvals
+       cout << "BootKeyInv[" << ki << "," << pos << "]" << endl; // MN:DEBUGGING
+#endif
 				for (i = 0; i < slots - pos; ++i) {
 					deg = (rotGroup[i] * (i + pos) * gap) % M;
 					pvals[i] = ksiPows[deg];
@@ -284,8 +364,17 @@ void Ring::addBootContext(long logSlots, long logp) {
 					deg = (rotGroup[i] * (i + pos - slots) * gap) % M;
 					pvals[i] = ksiPows[deg];
 				}
+#ifdef DEBUGpvals
+		DEBUGpvals; // MN:DEBUGGING
+#endif
 				EvaluatorUtils::rightRotateAndEqual(pvals, slots, ki);
+#ifdef DEBUGpvals
+		DEBUGpvals; // MN:DEBUGGING
+#endif
 				EMBInv(pvals, slots);
+#ifdef DEBUGpvals
+		DEBUGpvals; // MN:DEBUGGING
+#endif
 				for (i = 0, jdx = Nh, idx = 0; i < slots;++i, jdx += gap, idx += gap) {
 					pvec[idx] = EvaluatorUtils::scaleUpToZZ(pvals[i].real(), logp);
 					pvec[jdx] = EvaluatorUtils::scaleUpToZZ(pvals[i].imag(), logp);
@@ -295,7 +384,7 @@ void Ring::addBootContext(long logSlots, long logp) {
 				rpvecInv[pos] = new uint64_t[np << logN];
 				CRT(rpvecInv[pos], pvec, np);
 				for (i = 0; i < N; ++i) {
-					pvec[i] = ZZ::zero();
+					pvec[i].kill(); //pvec[i] = ZZ::zero(); // MN2020/02/05: No leak, but kill is a little faster.
 				}
 			}
 		}
@@ -616,4 +705,11 @@ void Ring::sampleUniform2(ZZ* res, long bits) {
 	for (long i = 0; i < N; i++) {
 		res[i] = RandomBits_ZZ(bits);
 	}
+}
+
+/* This procedure is only here to allow using a higher precision for Pi than the default 150 bits.
+ */
+long RRsetprecisionnow(long p) {
+    RR::SetPrecision( p );// default 150
+    return p;
 }

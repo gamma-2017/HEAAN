@@ -74,6 +74,31 @@ RingMultiplier::RingMultiplier() {
 	}
 }
 
+RingMultiplier::~RingMultiplier() 
+{
+    for ( long i=0; i<nprimes; i++ ) {
+        if ( pHatInvModp[i] ) delete[] pHatInvModp[i];
+        if ( pHat[i] ) delete[] pHat[i];
+        if ( scaledRootInvPows[i] ) delete[] scaledRootInvPows[i];
+        if ( scaledRootPows[i] ) delete[] scaledRootPows[i];
+        if ( coeffpinv_array[i] ) delete[] coeffpinv_array[i];
+        if ( red_ss_array[i] ) _ntl_general_rem_one_struct_delete( red_ss_array[i] );
+    }
+    delete[] pHatInvModp;
+    delete[] pHat;
+    delete[] pProdh;
+    delete[] pProd;
+    //delete[] coeffpinv_array;
+    //delete[] red_ss_array;
+    delete[] scaledNInv;
+    delete[] scaledRootInvPows;
+    delete[] scaledRootPows;
+    delete[] pInvVec;
+    delete[] prVec;
+    delete[] pVec;
+
+}
+
 bool RingMultiplier::primeTest(uint64_t p) {
 	if(p < 2) return false;
 	if(p != 2 && p % 2 == 0) return false;
@@ -301,8 +326,8 @@ void RingMultiplier::multAndEqual(ZZ* a, ZZ* b, long np, const ZZ& mod) {
 	}
 	NTL_EXEC_RANGE_END;
 
-	ZZ* pHatnp = pHat[np - 1];
-	uint64_t* pHatInvModpnp = pHatInvModp[np - 1];
+	//ZZ* pHatnp = pHat[np - 1];
+	//uint64_t* pHatInvModpnp = pHatInvModp[np - 1];
 
 	reconstruct(a, ra, np, mod);
 
@@ -331,8 +356,8 @@ void RingMultiplier::multNTTAndEqual(ZZ* a, uint64_t* rb, long np, const ZZ& mod
 	}
 	NTL_EXEC_RANGE_END;
 
-	ZZ* pHatnp = pHat[np - 1];
-	uint64_t* pHatInvModpnp = pHatInvModp[np - 1];
+	//ZZ* pHatnp = pHat[np - 1];
+	//uint64_t* pHatInvModpnp = pHatInvModp[np - 1];
 
 	reconstruct(a, ra, np, mod);
 
@@ -362,8 +387,8 @@ void RingMultiplier::square(ZZ* x, ZZ* a, long np, const ZZ& mod) {
 	}
 	NTL_EXEC_RANGE_END;
 
-	ZZ* pHatnp = pHat[np - 1];
-	uint64_t* pHatInvModpnp = pHatInvModp[np - 1];
+	//ZZ* pHatnp = pHat[np - 1];
+	//uint64_t* pHatInvModpnp = pHatInvModp[np - 1];
 
 	reconstruct(x, rx, np, mod);
 
