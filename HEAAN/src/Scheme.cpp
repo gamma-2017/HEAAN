@@ -354,7 +354,7 @@ void Scheme::encrypt ( Ciphertext& cipher, complex<double>* vals, long n, long l
     Plaintext plain;
     assert ( 0<=logq && logq <= logQ );
     assert ( logp>=0 && logp<=logq );
-    assert ( 0<=n && n<=N && 0==N%n );
+    assert ( 0<=n && n<N && 0==N%n );
     assert ( nu>=0 );
     encode ( plain, vals, n, logp, logq, nu );
     encryptMsg ( cipher, plain );
@@ -365,7 +365,7 @@ void Scheme::encrypt ( Ciphertext& cipher, double* vals, long n, long logp, long
     Plaintext plain;
     assert ( 0<=logq && logq <= logQ );
     assert ( logp>=0 && logp<=logq );
-    assert ( 0<=n && n<=N && 0==N%n );
+    assert ( 0<=n && n<N && 0==N%n );
     assert ( nu>=0 );
     encode ( plain, vals, n, logp, logq, nu );
     encryptMsg ( cipher, plain );
@@ -375,7 +375,7 @@ void Scheme::encryptZeros ( Ciphertext& cipher, long n, long logp, long logq, do
 {
     assert ( 0<=logq && logq <= logQ );
     assert ( logp>=0 && logp<=logq );
-    assert ( 0<=n && n<=N && 0==N%n );
+    assert ( 0<=n && n<N && 0==N%n );
     assert ( nu>=0 );
     encryptSingle ( cipher, 0.0, logp, logq, nu );
     cipher.n = n;
@@ -1613,6 +1613,11 @@ void Scheme::exp2piAndEqual ( Ciphertext& cipher, long dummy )
     addAndEqual ( cipher, cipher23 ); // cipher.logq : logq - 3logp
 }
 
+/* MN:
+ * The method Scheme::evalExpAndEqual takes a ciphertext cipher of some plaintext x and
+ * computes a ciphertext of exp( i Im(x) )
+ * with approximation determined by logT and logI.
+ */
 void Scheme::evalExpAndEqual (
     Ciphertext& cipher,
     long logT,
@@ -1646,7 +1651,7 @@ void Scheme::evalExpAndEqual (
          * Disregarding errors the result should be of absolute value 1.
          * Optimistically, we thus use cipher.nu=1 as a bound to the absolute value.
          */
-        cipher.nu = 1; // MN2020/02/06: slightly optimistic gues: abs( decrypted exp2pi result ) ~= 1. Putting it here, makes the subsequent error propagation estimation more realistic.
+        cipher.nu = 1; // MN2020/02/06: slightly optimistic guess: abs( decrypted exp2pi result ) ~= 1. Putting it here, makes the subsequent error propagation estimation more realistic.
 #endif
         /* MN:
          * Square the result logT times to obtain ~= exp( 2 Pi i Im(cipher) ).
@@ -1799,7 +1804,12 @@ void Scheme::bootstrapAndEqual (
     cipher.B *= exp2 ( cipher.logp- ( logq+4 ) );
     cipher.logp = logq + 4;  // This divides by 2^(logq+4-cipher.logp) wo losing precision.
     /* MN:
-     * If not all slots are used repeat values... TODO: Is that correct?
+     * If not all slots are used,
+     *    multiply by N/2/n = 2^(logNh-logn) and
+     *    make sure that hidden slots are used nicely:
+     *      Namely, slots 0..N/2-1 = 0..n-1, 0..n-1, ..., 0..n-1.
+     * Actually, each used leftRotateFast does nothing visible when considering the number of used slots.
+     * Still, the representation changes when looking at the values as if all slots were used.
      */
     Ciphertext rot;
     for ( long i = logSlots; i < logNh; ++i ) {

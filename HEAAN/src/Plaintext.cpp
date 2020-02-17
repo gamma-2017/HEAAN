@@ -6,6 +6,8 @@
 * work.  If not, see <http://creativecommons.org/licenses/by-nc/3.0/>.
 */
 #include "Plaintext.h"
+#define PLAINTEXT_DISPLAYSLOTS 5
+
 
 #ifdef CIPHERTEXT_EXTENDED
 Plaintext::Plaintext(long logp, long logq, long n, double nu, double B)
@@ -73,9 +75,9 @@ ostream& operator<<(ostream& s, const std::pair<Plaintext*,Scheme*> o)
         norm = max(norm,abs(res[i]));
 #ifndef QUIET
 //#ifdef VERBOSE
-        if (i<5 || i>n-2) {
+        if (i<PLAINTEXT_DISPLAYSLOTS || i>n-2) {
             s << "  [" << i << "]=" << res[i] << "," << endl;
-        } else if (i==5) s << "  ..." << endl;
+        } else if (i==PLAINTEXT_DISPLAYSLOTS) s << "  ..." << endl;
 #endif
     }
     s << "  |plain|=" << norm << "." << endl;
@@ -105,18 +107,20 @@ ostream& operator<<(ostream& s, const std::tuple<Plaintext*,Plaintext*,Scheme*> 
         if (b>maxb) maxb=b;
 #ifndef QUIET
 //#ifdef VERBOSE
-        if (i<5 || i>n-2) {
+        if (i<PLAINTEXT_DISPLAYSLOTS || i>n-2) {
             s << "  [" << i << "]="
               << data0[i] << "~"
               << data1[i] << "\u00B1"
               << b << (( b<B) ? "\u2714":"\033[1;31m\u2620\u2620\u2620\033[0m") << ","
               << endl;
-        } else if (i==5) s << "  ..." << endl;
+        } else if (i==PLAINTEXT_DISPLAYSLOTS) s << "  ..." << endl;
 #endif
     }
     s << "  |plain|=" << norm << ".";
-    s << "  max~ = \u00B1" << maxb << (( maxb<B) ? "\u2714":"\033[1;31m\u2620\u2620\u2620\033[0m")
+    s << "  max~ = \u00B1" << maxb
+      << "=2^" << log2(maxb)
       << "=B*2^" << log2(maxb/B)
+      << (( maxb<B) ? "\u2714":"\033[1;31m\u2620\u2620\u2620\033[0m")
       << "." << endl;
     // Explicit deletes needed? YES!, reflecting explicit "new []" commands in scheme->decode.
     delete[] data0;

@@ -50,7 +50,7 @@ static const long h = 64;
 static const long pbnd = 59.0;
 static const long kbar = pbnd + 1;
 static const long kbar2 = 2 * kbar;
-static const long logNh = ( logN - 1 ); // This is not log(N*h) = logN + log(h)
+static const long logNh = ( logN - 1 ); // log(N/2). This is not log(N*h) = logN + log(h).
 static const long logQQ = ( 2 * logQ );
 static const long N = ( 1 << logN );
 static const long Nh = ( 1 << logNh );

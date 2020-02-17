@@ -140,6 +140,7 @@ ostream& operator<< ( ostream& s, const Ciphertext& o )
 #include "Plaintext.h"
 #include "Scheme.h"
 #include "SecretKey.h"
+#define CIPHERTEXT_DISPLAYSLOTS 5
 ostream& operator<< ( ostream& s, const std::tuple<Ciphertext*,SecretKey*,Scheme*> o )
 {
     Ciphertext* cipher = std::get<0> ( o );
@@ -164,7 +165,7 @@ ostream& operator<< ( ostream& s, const std::tuple<Ciphertext*,SecretKey*,Scheme
         for (i=N-1; i>=0; i-- ) {
             if ( plain.mx[i]!=0 ) break;
         }
-        s << plain.mx[i] << "*X^" << i ;
+        s << plain.mx[i] << "*X^" << i;
         if (0) { // either see all
             cout << "+" << endl;
             for ( i--; i>=1; i-- ) s << "    " << plain.mx[i] << "*X^" << i << "+" << endl;
@@ -180,11 +181,11 @@ ostream& operator<< ( ostream& s, const std::tuple<Ciphertext*,SecretKey*,Scheme
         norm = max(norm,abs(data[i]));
 #ifndef QUIET
 //#ifdef VERBOSE
-        if ( i<5 || i>n-2 ) {
+        if ( i<CIPHERTEXT_DISPLAYSLOTS || i>n-2 ) {
             s << "  [" << i << "]="
               << data[i] << ","
               << endl;
-        } else if ( i==5 ) s << "  ..." << endl;
+        } else if ( i==CIPHERTEXT_DISPLAYSLOTS ) s << "  ..." << endl;
 #endif
     }
     s << "  |plain|=" << norm << "." << endl;
@@ -236,17 +237,19 @@ ostream& operator<< ( ostream& s, const std::tuple<Ciphertext*,Ciphertext*,Secre
         if (b>maxb) maxb=b;
 #ifndef QUIET
 //#ifdef VERBOSE
-        if (i<5 || i>n-2) {
+        if (i<CIPHERTEXT_DISPLAYSLOTS || i>n-2) {
             s << "  [" << i << "]="
               << data0[i] << "~"
               << data1[i] << "\u00B1"
               << b << (( b<B) ? "\u2714":"\033[1;31m\u2620\u2620\u2620\033[0m") << ","
               << endl;
-        } else if (i==5) s << "  ..." << endl;
+        } else if (i==CIPHERTEXT_DISPLAYSLOTS) s << "  ..." << endl;
 #endif
     }
     s << "  |plain|=" << norm << ".";
-    s << "  max~ = \u00B1" << maxb << "=B*2^" << log2(maxb/B)
+    s << "  max~ = \u00B1" << maxb
+      << "=2^" << log2(maxb)
+      << "=B*2^" << log2(maxb/B)
       << (( maxb<B) ? "\u2714":"\033[1;31m\u2620\u2620\u2620\033[0m")
       << "." << endl;
     // Explicit deletes needed? YES!, reflecting explicit "new []" commands in scheme->decode.
